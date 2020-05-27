@@ -9,8 +9,9 @@ create table users (
   icon blob
 );
 
-create table favorite_(user_id) (
+create table favorites (
   id int auto_increment primary key,
+  user_id int,
   menu_id int
 );
 

@@ -7,13 +7,17 @@ create table users (
   user_name varchar(255),
   password varchar(255),
   icon blob,
-  enabled bit(1)
+  bool bit(1),
+  created_at datetime,
+  updated_at datetime,
 );
 
 create table favorites (
   id int auto_increment primary key,
   user_id int,
-  menu_id int
+  menu_id int,
+  created_at datetime,
+  updated_at datetime,
 );
 
 create table menus (
@@ -25,7 +29,8 @@ create table menus (
   cost int,
   img varchar(255),
   created_at datetime,
-  enabled bit(1)
+  updated_at datetime,
+  bool bit(1)
 );
 
 create table comments (

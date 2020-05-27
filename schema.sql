@@ -6,7 +6,8 @@ create table users (
   id int auto_increment primary key,
   user_name varchar(255),
   password varchar(255),
-  icon blob
+  icon blob,
+  enabled bit(1)
 );
 
 create table favorites (
@@ -23,7 +24,8 @@ create table menus (
   body varchar(255),
   cost int,
   img varchar(255),
-  created_at datetime
+  created_at datetime,
+  enabled bit(1)
 );
 
 create table comments (

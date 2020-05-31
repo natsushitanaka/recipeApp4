@@ -27,7 +27,7 @@ abstract class Application
 
     /**
      * デバッグモードを設定
-     * 
+     *
      * @param boolean $debug
      */
     protected function setDebugMode($debug)
@@ -59,6 +59,11 @@ abstract class Application
      */
     protected function configure()
     {
+      $this->db_manager->connect('master', array(
+        'dsn' => 'mysql:dbname=recipeApp;host=localhost',
+        'user' => 'root',
+        'password' => '',
+      ));
     }
 
     /**

@@ -17,14 +17,14 @@ class DbManager
      * @param string $name
      * @param array $params
      */
-    public function connect($name, $params)
+    public function connect($name)
     {
         $params = array_merge(array(
-            'dsn'      => null,
-            'user'     => '',
-            'password' => '',
+            'dsn' => 'mysql:dbname=recipeApp;host=localhost',
+            'user' => 'dbuser',
+            'password' => 'Owazo443@cent7',
             'options'  => array(),
-        ), $params);
+        ));
 
         $con = new PDO(
             $params['dsn'],

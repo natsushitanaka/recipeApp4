@@ -60,8 +60,8 @@ abstract class Application
     protected function configure()
     {
       $this->db_manager->connect('master', array(
-        'dsn' => 'mysql:dbname=recipeApp;host=localhost',
-        'user' => 'root',
+        'dsn' => null,
+        'user' => '',
         'password' => '',
       ));
     }

@@ -14,10 +14,16 @@ class RecipeApp extends Application
     return array(
       '/' => array('controller' => 'mypage', 'action' => 'index'),
       '/account' => array('controller' => 'account', 'action' => 'signin'),
+      '/mypage' => array('controller' => 'mypage', 'action' => 'index'),
       '/account/:action' => array('controller' => 'account'),
       // '/mypage/otherList/:user_name' => array('controller' => 'mypage', 'action' => 'otherList'),
       // '/mypage/:action/:id' => array('controller' => 'mypage'),
-      // '/mypage/:action' => array('controller' => 'mypage'),
+      '/mypage/:action' => array('controller' => 'mypage'),
     );
+  }
+
+  protected function configure()
+  {
+    $this->db_manager->connect('master');
   }
 }

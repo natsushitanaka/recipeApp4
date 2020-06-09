@@ -1,5 +1,4 @@
 <?php
-
 require '../bootstrap.php';
 require '../RecipeApp.php';
 

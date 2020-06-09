@@ -4,7 +4,7 @@ class UsersRepository extends DbRepository
 {
   public function isUniqueUserName($user_name)
   {
-    $sql = "select count(id) as count from users where user_name = :user_name and bool = true";
+    $sql = "select count(id) as count from users where user_name = :user_name and deleted_at is null";
 
     $row = $this->fetch($sql, array(
       ':user_name' => $user_name
@@ -15,21 +15,20 @@ class UsersRepository extends DbRepository
         return false;
   }
 
-  public function insert($user_name, $password, $icon)
+  public function insert($user_name, $password)
   {
     $password = $this->hashPassword($password);
 
-    $sql = "insert into users(user_name, password, icon, created_at) values(:user_name, :password, :icon, now())";
+    $sql = "insert into users(user_name, password, created_at, updated_at) values(:user_name, :password, now(), now())";
     $stmt = $this->execute($sql, array(
       ':user_name' => $user_name,
-      ':password' => $password,
-      ':icon' => $icon,
+      ':password' => $password
     ));
   }
 
   public function unsubscribe($id)
   {
-    $sql = "update users set bool = false where id = :id";
+    $sql = "update users set deleted_at = now() where id = :id";
     $stmt = $this->execute($sql, array(
       ':id' => $id,
     ));
@@ -57,11 +56,24 @@ class UsersRepository extends DbRepository
 
   public function editPassword($id, $password)
   {
+    $password = $this->hashPassword($password);
+
     $sql = "update users set password = :password where id = :id";
     $stmt = $this->execute($sql, array(
       ':id' => $id,
       ':password' => $password,
     ));
+  }
+
+  public function isSamePassword($now_password, $validate_password)
+  {
+    $validate_password = $this->hashPassword($validate_password);
+
+    if($validate_password === $now_password){
+      return true;
+    }else{
+      return false;
+    }
   }
 
   public function hashPassword($password)
@@ -71,9 +83,11 @@ class UsersRepository extends DbRepository
 
   public function fetchByUserName($user_name)
   {
-    $sql = "select * from users where user_name = :user_name and bool = true";
+    $sql = "select * from users where user_name = :user_name";
 
-    return $this->fetch($sql, array(':user_name' => $user_name));
+    return $this->fetch($sql, array(
+      ':user_name' => $user_name,
+    ));
   }
 
   public function getMyFavorites($id)

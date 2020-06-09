@@ -1,46 +1,42 @@
--- create database recipeApp;
---
--- use recipeApp;
---
---
-drop table users;
-drop table menus;
+create database recipeApp;
+
+use recipeApp;
+
 create table users (
-  id int auto_increment primary key,
-  user_name varchar(255),
-  password varchar(255),
+  id int auto_increment primary key not null,
+  user_name varchar(255) not null,
+  password varchar(255) not null,
   icon blob,
-  bool boolean default true,
-  created_at datetime,
-  updated_at datetime,
-  deleted_at datetime
+  created_at datetime not null,
+  updated_at datetime not null,
+  deleted_at datetime DEFAULT null
 );
---
--- create table favorites (
---   id int auto_increment primary key,
---   user_id int,
---   menu_id int,
---   created_at datetime,
---   updated_at datetime
--- );
---
+
+create table favorites (
+  id int auto_increment primary key not null,
+  user_id int not null,
+  menu_id int not null,
+  created_at datetime not null,
+  updated_at datetime not null
+);
+
 create table menus (
-  id int auto_increment primary key,
-  user_id int,
-  title varchar(255),
+  id int auto_increment primary key not null,
+  user_id int not null,
+  title varchar(255) not null,
   category varchar(255),
-  body varchar(255),
+  body varchar(255) not null,
   cost int,
   img varchar(255),
-  created_at datetime,
-  updated_at datetime,
-  bool boolean default false
+  created_at datetime not null,
+  updated_at datetime not null,
+  bool tinyint(1) default false
 );
---
--- create table comments (
---   id int auto_increment primary key,
---   menu_id int,
---   user_id int,
---   body varchar(255),
---   created_at datetime
--- );
+
+create table comments (
+  id int auto_increment primary key not null,
+  menu_id int not null,
+  user_id int not null,
+  body varchar(255) not null,
+  created_at datetime not null
+);

@@ -20,7 +20,7 @@ class DbManager
     public function connect($name)
     {
         $params = array_merge(array(
-            'dsn' => 'mysql:dbname=recipeApp;host=localhost',
+            'dsn' => 'mysql:dbname=recipeApp;host=localhost;charset=utf8;',
             'user' => 'dbuser',
             'password' => 'Owazo443@cent7',
             'options'  => array(),

@@ -4,18 +4,22 @@ class MypageController extends Controller
 
 {
   // protected $auth_actions = array('review', 'registerMenu', 'myMenuList', 'others');
-  // private $categories =array('No Category', '前菜', 'サラダ', 'メイン', 'ご飯・麺', 'おつまみ', 'ドリンク');
 
   public function indexAction()
   {
+    $user = array();
+    $menus = array();
+
     if($this->session->isAuthenticated()){
       $user = $this->db_manager->get('Users')->fetchByUserName($_SESSION['user']['user_name']);
+      $menus = $this->db_manager->get('Recipe')->getMyAllMenus($_SESSION['user']['id']);
     }else{
       $user = null;
     }
 
     return $this->render(array(
       'user' => $user,
+      'menus' => $menus,
       '_token' => $this->generateCsrfToken('mypage/index'),
     ));
   }

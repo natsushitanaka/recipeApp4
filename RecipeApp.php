@@ -15,10 +15,11 @@ class RecipeApp extends Application
       '/' => array('controller' => 'mypage', 'action' => 'index'),
       '/account' => array('controller' => 'account', 'action' => 'signin'),
       '/mypage' => array('controller' => 'mypage', 'action' => 'index'),
-      '/account/:action' => array('controller' => 'account'),
+      '/:controller/:action' => array(),
+      '/:controller/:action/:id' => array(),
       // '/mypage/otherList/:user_name' => array('controller' => 'mypage', 'action' => 'otherList'),
       // '/mypage/:action/:id' => array('controller' => 'mypage'),
-      '/mypage/:action' => array('controller' => 'mypage'),
+      // '/mypage/:action' => array('controller' => 'mypage'),
     );
   }
 

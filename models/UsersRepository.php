@@ -83,7 +83,7 @@ class UsersRepository extends DbRepository
 
   public function fetchByUserName($user_name)
   {
-    $sql = "select * from users where user_name = :user_name";
+    $sql = "select * from users where user_name = :user_name and deleted_at is null";
 
     return $this->fetch($sql, array(
       ':user_name' => $user_name,

@@ -15,6 +15,7 @@ class RecipeApp extends Application
       '/' => array('controller' => 'mypage', 'action' => 'index'),
       '/account' => array('controller' => 'account', 'action' => 'signin'),
       '/mypage' => array('controller' => 'mypage', 'action' => 'index'),
+      '/recipes' => array('controller' => 'recipe', 'action' => 'recipes'),
       '/:controller/:action' => array(),
       '/:controller/:action/:id' => array(),
       // '/mypage/otherList/:user_name' => array('controller' => 'mypage', 'action' => 'otherList'),

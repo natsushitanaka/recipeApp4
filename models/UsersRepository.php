@@ -9,6 +9,7 @@ class UsersRepository extends DbRepository
     $row = $this->fetch($sql, array(
       ':user_name' => $user_name
     ));
+    
     if($row['count'] === '0'){
         return true;
     }
@@ -87,6 +88,15 @@ class UsersRepository extends DbRepository
 
     return $this->fetch($sql, array(
       ':user_name' => $user_name,
+    ));
+  }
+
+  public function fetchById($id)
+  {
+    $sql = "select id, user_name from users where id = :id and deleted_at is null";
+
+    return $this->fetch($sql, array(
+      ':id' => $id,
     ));
   }
 

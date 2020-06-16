@@ -1,6 +1,6 @@
 <?php $this->setLayoutvar('title', 'ユーザー情報編集')?>
 
-<a href="<?= $base_url; ?>/">ホーム画面</a>
+<a href="<?= $base_url; ?>/">ホーム</a>
 <a href="<?= $base_url; ?>/mypage/password">パスワード変更</a>
 
 <h3>ユーザー情報編集</h3>

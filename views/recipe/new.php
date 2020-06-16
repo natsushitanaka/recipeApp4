@@ -23,12 +23,12 @@
 </textarea><br>
 <input type="file" name="img"><br>
 <input type="radio" name="openRange" value="1"
-<?php if($menu['openRange'] === 'true'){echo 'checked'; } ?>>
+<?php if($menu['openRange'] === '1'){echo 'checked'; } ?>>
 <label>公開</label>
 <input type="radio" name="openRange" value="0"
-<?php if($menu['openRange'] === 'false' || $menu['openRange'] === null){echo 'checked'; } ?>>
+<?php if($menu['openRange'] === '0' || $menu['openRange'] === null){echo 'checked'; } ?>>
 <label>非公開</label><br>
-<input type="submit" value="登録する">
+<input type="submit" name="submit" value="登録する">
 <input type="hidden" name="_token" value="<?= $this->escape($_token); ?>"><br>
 </form>
 

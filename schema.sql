@@ -21,8 +21,7 @@ create table favorites (
   id int auto_increment primary key not null,
   user_id int not null,
   menu_id int not null,
-  created_at datetime not null,
-  updated_at datetime not null
+  created_at datetime not null
 )DEFAULT CHARSET=utf8mb4;
 
 create table menus (

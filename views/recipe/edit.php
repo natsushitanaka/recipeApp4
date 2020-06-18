@@ -9,6 +9,14 @@
   <?= $this->render('messages', array('messages' => $messages)); ?>
 <?php endif; ?>
 
+<div>
+    <?php if($menu['img'] !== null): ?>
+        <img src="/imgs/<?php echo $menu['img']; ?>" width="200" height="200">
+    <?php else: ?>
+        <p>No Image</p>
+    <?php endif; ?>
+</div>
+
 <form method="POST" action="">
     <input type="text" maxlength="40" name="title" value="<?= $this->escape($menu['title']); ?>" placeholder="メニュー名(20字以内)">*必須<br>
     <input type="number" name="cost" value="<?= $this->escape($menu['cost']); ?>" placeholder="コスト"><br>
@@ -34,9 +42,13 @@
 
 <h3>画像編集</h3>
 
+<?php if(isset($_SESSION['editImg_error'])): ?>
+    <p><?= $this->escape($_SESSION['editImg_error']); ?></p>
+<?php endif; ?>
+
 <form method="POST" action="" enctype="multipart/form-data">
-    <input type="file" name="img"><br>
-    <input type="submit" value="画像を変更する">
+    <input type="file" name="img">
+    <input type="submit" name="img" value="画像を変更する">
     <input type="hidden" name="_token" value="<?= $this->escape($_token); ?>">
 </form>
 

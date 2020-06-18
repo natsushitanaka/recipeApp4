@@ -9,7 +9,7 @@ class CommentController extends Controller
         $comment = $this->request->getPost('comment');
 
         if(!strlen($comment)){
-            $this->session->set('comment_error', '!コメントを入力してください!');
+            $this->session->set('comment_error', 'コメントを入力してください。');
         }else{
             $this->db_manager->get('Comments')->insert($_SESSION['user']['id'], $params['id'], $comment);
         }

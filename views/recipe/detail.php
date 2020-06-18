@@ -14,7 +14,7 @@
 <table>
     <div>
         <?php if($menu['img'] !== null): ?>
-            <img src="images/<?php echo $menu['img']; ?>" width="300" height="300">
+            <img src="/imgs/<?php echo $menu['img']; ?>" width="200" height="200">
         <?php else: ?>
             <p>No Image</p>
         <?php endif; ?>
@@ -50,6 +50,10 @@
         <td>更新日</td>
         <td><?= $this->escape($menu['updated_at']); ?></td>
     </tr>
+    <tr>
+        <td>お気に入り獲得数</td>
+        <td><?= $this->escape($countFavorite); ?></td>
+    </tr>
     <?php if($session->isAuthenticated()): ?>
     <tr>
         <td>お気に入り</td>
@@ -70,7 +74,7 @@
     <tr>
         <td>ユーザー</td>
         <td>本文</td>
-        <td>作成日</td>
+        <td>投稿日</td>
     </tr>
     <?php foreach($comments as $comment): ?>
     <tr>

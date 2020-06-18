@@ -44,14 +44,14 @@ class UsersRepository extends DbRepository
     ));
   }
 
-  public function editIcon($id, $icon)
+  public function editIcon($id, $icon_data, $icon_ext)
   {
-    $iconHandle = fbsql_create_blob($icon);
+    $sql = "update users set icon_data = :icon_data, icon_ext = :icon_ext where id = :id";
 
-    $sql = "update users set icon = :icon where id = :id";
     $stmt = $this->execute($sql, array(
       ':id' => $id,
-      ':icon' => $iconHandle,
+      ':icon_data' => $icon_data,
+      ':icon_ext' => $icon_ext,
     ));
   }
 

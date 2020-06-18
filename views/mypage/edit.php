@@ -10,13 +10,22 @@
 <?php endif; ?>
 
 <form action="" method="POST">
-<input type="hidden" name="_token" value="<?= $this->escape($_token); ?>">
 <p>ユーザー名</p>
 <input type="text" name="user_name" value="<?= $this->escape($user['user_name']); ?>">
 <input type="submit" value="変更する">
+<input type="hidden" name="_token" value="<?= $this->escape($_token); ?>">
 </form>
 
 <p>アイコン</p>
+
+<div>
+    <?php if(!empty($user['icon_data'])): ?>
+        <img src="data:image/<?= $this->escape($user['icon_ext']); ?>;base64,<?= base64_encode($user['icon_data']); ?>" width="100" height="100">
+    <?php else: ?>
+        <p>No Icon</p>
+    <?php endif; ?>
+</div>
+
 <form method="POST" action="" enctype="multipart/form-data">
   <input type="file" name="icon">
   <input type="submit" value="送信">

@@ -11,7 +11,8 @@ create table users (
   id int auto_increment primary key not null,
   user_name varchar(255) not null,
   password varchar(255) not null,
-  icon blob,
+  icon_data blob,
+  icon_ext varchar(10),
   created_at datetime not null,
   updated_at datetime not null,
   deleted_at datetime DEFAULT null

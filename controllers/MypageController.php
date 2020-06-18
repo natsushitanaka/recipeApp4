@@ -7,6 +7,7 @@ class MypageController extends Controller
 
   private $categories =array('No Category', '前菜', 'サラダ', 'メイン', 'ご飯・麺', 'おつまみ', 'ドリンク');
   private $sorts =array('作成日（新しい順）', '作成日（古い順）', '更新日（新しい順）', '更新日（古い順）', 'お気に入り（多い順）', 'お気に入り（少ない順）');
+  private $messages = array();
 
   public function pageNation($records = array(), $max_record_by_page)
   {
@@ -154,69 +155,80 @@ class MypageController extends Controller
 
   public function editAction()
   {
-    $messages = array();
-
     $user = $_SESSION['user'];
     $user_name = $this->request->getPost('user_name');
 
     if(isset($user_name)){
       if(!strlen($user_name)){
-        $messages[] = "ユーザー名を入力してください。";
-      }elseif($user_name === $_SESSION['user']['user_name']){
-        $messages[] = "現在のユーザー名と同じですよ？";
+        $this->messages[] = "ユーザー名を入力してください。";
+      }elseif($user_name === $user['user_name']){
+        $this->messages[] = "現在のユーザー名と同じですよ？";
       }elseif(!$this->db_manager->get('Users')->isUniqueUserName($user_name)){
-        $messages[] = 'このユーザー名は使用できません。';
+        $this->messages[] = 'このユーザー名は使用できません。';
       }
 
-      if(count($messages) === 0){
-        $this->db_manager->get('Users')->editName($_SESSION['user']['id'], $user_name);
+      if(count($this->messages) === 0){
+        $this->db_manager->get('Users')->editName($user['id'], $user_name);
         $user = $this->db_manager->get('Users')->fetchByUserName($user_name);
-        $this->session->set('user', $user);
-        $messages[] = 'ユーザー名を変更しました。';
+        $this->messages[] = 'ユーザー名を変更しました。';
       }
     }
 
+    if(!empty($_FILES['icon']['name'])){
+      $icon_data = file_get_contents($_FILES['icon']['tmp_name']);
+      $icon_ext = pathinfo($_FILES["icon"]["name"], PATHINFO_EXTENSION);
+
+      if($icon_ext !== 'png' && $icon_ext !== 'gif' && $icon_ext !== 'jpg' && $icon_ext !== 'jpeg' ){
+        $this->messages[] = '画像ファイル(png,gif,jpg,jpeg)を選択してください。';
+      }
+
+      if(count($this->messages) === 0){
+        $this->db_manager->get('Users')->editIcon($user['id'], $icon_data, $icon_ext);
+      }
+    }
+
+    $user = $this->db_manager->get('Users')->fetchByUserName($user['user_name']);
+    $this->session->set('user', $user);
+
     return $this->render(array(
       'user' => $user,
-      'messages' => $messages,
+      'messages' => $this->messages,
       '_token' => $this->generateCsrfToken('mypage/edit'),
     ));
   }
 
   public function passwordAction()
   {
-    $messages = array();
-
     $now = $this->request->getPost('now_password');
     $new = $this->request->getPost('new_password');
     $validate = $this->request->getPost('validate_password');
     
     if(isset($now) || isset($new) || isset($validate)){
       if(!strlen($now)){
-        $messages[] = '現在のパスワードを入力してください。';
+        $this->messages[] = '現在のパスワードを入力してください。';
       }elseif(!$this->db_manager->get('Users')->isSamePassword($_SESSION['user']['password'], $now)){
-        $messages[] = '現在のパスワードが正しくありません。';
+        $this->messages[] = '現在のパスワードが正しくありません。';
       }
       if(!strlen($new)){
-        $messages[] = '新しいパスワードを入力してください。';
+        $this->messages[] = '新しいパスワードを入力してください。';
       }
       if(!strlen($validate)){
-        $messages[] = '新しいパスワード(確認)を入力してください。';
+        $this->messages[] = '新しいパスワード(確認)を入力してください。';
       }
       if(strlen($new) && strlen($validate)){
         if($new !== $validate){
-          $messages[] = '新しいパスワードと新しいパスワード(確認)が一致しません。';
+          $this->messages[] = '新しいパスワードと新しいパスワード(確認)が一致しません。';
         }
         if(!preg_match('/\A(?=.*?[a-z])(?=.*?\d)(?=.*?[!-\/:-@[-`{-~])[!-~]{8,20}+\z/i', $new)){
-          $messages[] = 'パスワードは半角英数字記号の組み合わせ８～２０文字以内で入力してください。';
+          $this->messages[] = 'パスワードは半角英数字記号の組み合わせ８～２０文字以内で入力してください。';
         }
       }
 
-      if(count($messages) === 0){
+      if(count($this->messages) === 0){
         $this->db_manager->get('Users')->editPassword($_SESSION['user']['id'], $new);
         $user = $this->db_manager->get('Users')->fetchByUserName($_SESSION['user']['user_name']);
         $this->session->set('user', $user);
-        $messages[] = 'パスワードを変更しました。';
+        $this->messages[] = 'パスワードを変更しました。';
       }
     }
     
@@ -224,7 +236,7 @@ class MypageController extends Controller
       'now_password' => $now,
       'new_password' => $new,
       'validate_password' => $validate,
-      'messages' => $messages,
+      'messages' => $this->messages,
       '_token' => $this->generateCsrfToken('mypage/password'),
     ));
   }

@@ -18,12 +18,12 @@
 </h3>
 
 <?php if($session->isAuthenticated()): ?>
-  <p>name:<?= $user['user_name']; ?></p>
+  <p>ユーザー名：<?= $user['user_name']; ?></p>
   <div>
-    <?php if(isset($user['icon'])): ?>
-      <img src="data:image/png;base64,<?php base64_encode($user['icon']); ?>">
+    <?php if(isset($user['icon_data'])): ?>
+      <img src="data:image/<?= $this->escape($user['icon_ext']); ?>;base64,<?= base64_encode($user['icon_data']); ?>" width="100" height="100">
     <?php else: ?>
-      <p>No Image</p>
+      <p>No Icon</p>
     <?php endif; ?>
   </div>
 <?php else: ?>

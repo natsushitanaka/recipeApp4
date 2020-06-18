@@ -4,6 +4,8 @@ class RecipeController extends Controller
 {
     private $categories =array('No Category', '前菜', 'サラダ', 'メイン', 'ご飯・麺', 'おつまみ', 'ドリンク');
     private $sorts =array('作成日（新しい順）', '作成日（古い順）', '更新日（新しい順）', '更新日（古い順）', 'お気に入り（多い順）', 'お気に入り（少ない順）');
+    private $messages = array();
+    private $img;
 
     public function pageNation($records = array(), $max_record_by_page)
     {
@@ -48,9 +50,34 @@ class RecipeController extends Controller
 
 
 
+    public function checkImg()
+    {
+        $this->img = null;
+        
+        $tempfile = $_FILES['img']['tmp_name'];
+        $img = uniqid();
+        $img .= '.' . substr(strrchr($_FILES['img']['name'], '.'), 1);
+        $file = "imgs/".$img;
+
+        if (is_uploaded_file($tempfile)) {
+            move_uploaded_file($tempfile , 'imgs/'.$img);
+
+            if (!exif_imagetype($file)){
+                return $this->messages[] = "選択したファイルは画像ではありません。";
+            }else{
+                $this->img = $img;
+            }
+    
+        }else{
+            return $this->messages[] = "画像をアップロード出来ませんでした。";
+        }    
+    }
+
+
+
     public function newAction()
     {
-        $messages = array();
+        $img = null;
 
         $menu = array(
             'title' => $this->request->getPost('title'),
@@ -62,35 +89,27 @@ class RecipeController extends Controller
 
         if(isset($_POST['submit'])){
             if(!strlen($menu['title'])){
-                $messages[] = "タイトルは必須項目です。";
+                $this->messages[] = "タイトルは必須項目です。";
             }
-
-            if(isset($_POST['img'])){
-                $tempfile = $_FILES['img']['tmp_name'];
-                $img = uniqid();
-    
-                if (is_uploaded_file($tempfile)) {
-                    move_uploaded_file($tempfile , '../web/imgs/'.$img);
-                }    
-            }else{
-                $img = null;
+            if(!empty($_FILES['img']['name'])){
+                $this->checkImg();
             }
 
             if($_POST['cost'] === ''){
                 $menu['cost'] = '0';
             }
 
-            if(count($messages) === 0){
+            if(count($this->messages) === 0){
                 $this->db_manager->get('Menus')->insert
-                ($_SESSION['user']['id'], $menu['title'], $menu['cost'], $menu['category'], $menu['body'], $menu['openRange'], $img);
-                $messages[] = "新メニューが「{$menu['title']}」登録されました。";
+                ($_SESSION['user']['id'], $menu['title'], $menu['cost'], $menu['category'], $menu['body'], $menu['openRange'], $this->img);
+                $this->messages[] = "新メニューが「{$menu['title']}」登録されました。";
             }    
         }
 
         return $this->render(array(
             'menu' => $menu,
             'categories' => $this->categories,
-            'messages' => $messages,
+            'messages' => $this->messages,
             '_token' => $this->generateCsrfToken('recipe/new'),
           ));      
     }
@@ -99,22 +118,16 @@ class RecipeController extends Controller
 
     public function detailAction($params)
     {
-        $messages = array();
-
         $menu = $this->db_manager->get('Menus')->getDetail($params['id']);
+        $countFavorite = $this->db_manager->get('Favorites')->countFavorite($menu['id']);
         $comments = $this->db_manager->get('Comments')->get($menu['id']);
         $comment = $this->request->getPost('comment');
 
         $favorite = $this->db_manager->get('Favorites')->isFavorite($_SESSION['user']['id'], $params['id']);
 
-        if(isset($_POST['submit'])){
-            if(!strlen($comment)){
-                $messages[] = "コメントを入力してください。。";
-            }
-        }
-
         return $this->render(array(
             'menu' => $menu,
+            'countFavorite' => $countFavorite['favorite'],
             'comments' => $comments,
             'favorite' => $favorite,
             '_token' => $this->generateCsrfToken('recipe/detail'),
@@ -132,10 +145,9 @@ class RecipeController extends Controller
 
 
 
+
     public function editAction($params)
     {
-        $messages = array();
-
         $menu = $this->db_manager->get('Menus')->getDetail($params['id']);
 
         if(isset($_POST['submit'])){
@@ -152,20 +164,33 @@ class RecipeController extends Controller
             }
 
             if(!strlen($menu['title'])){
-                $messages[] = "タイトルは必須項目です。";
+                $this->messages[] = "タイトルは必須項目です。";
             }
 
-            if(count($messages) === 0){
+            if(count($this->messages) === 0){
                 $this->db_manager->get('Menus')->edit
                 ($params['id'], $menu['title'], $menu['cost'], $menu['category'], $menu['body'], $menu['openRange']);
-                $messages[] = "レシピを変更しました。";
+                $this->messages[] = "レシピを変更しました。";
             }    
         }
+
+        if(isset($_POST['img'])){
+            if(empty($_FILES['img']['name'])){
+                $this->messages[] = "ファイルを選択してください";
+            }else{
+                $this->checkImg();
+            }
+
+            if(count($this->messages) === 0){
+                $this->db_manager->get('Menus')->editImg($params['id'], $this->img);
+            }
+        }
+
 
         return $this->render(array(
             'menu' => $menu,
             'categories' => $this->categories,
-            'messages' => $messages,
+            'messages' => $this->messages,
             '_token' => $this->generateCsrfToken('recipe/edit'),
           ));      
     }

@@ -2,7 +2,7 @@
 
 class RecipeApp extends Application
 {
-  protected $login_action = array('', '');
+  protected $login_action = array('account', 'notLoggedIn');
 
   public function getRootDir()
   {
@@ -15,12 +15,13 @@ class RecipeApp extends Application
       '/' => array('controller' => 'mypage', 'action' => 'index'),
       '/account' => array('controller' => 'account', 'action' => 'signin'),
       '/mypage' => array('controller' => 'mypage', 'action' => 'index'),
-      '/recipes' => array('controller' => 'recipe', 'action' => 'recipes'),
+      '/recipe' => array('controller' => 'recipe', 'action' => 'recipes'),
+      '/favorites' => array('controller' => 'mypage', 'action' => 'favorite'),
+      '/recipe/user/:id' => array('controller' => 'recipe', 'action' => 'others'),
+      '/recipe/new' => array('controller' => 'recipe', 'action' => 'new'),
+      '/recipe/:id' => array('controller' => 'recipe', 'action' => 'detail'),
       '/:controller/:action' => array(),
       '/:controller/:action/:id' => array(),
-      // '/mypage/otherList/:user_name' => array('controller' => 'mypage', 'action' => 'otherList'),
-      // '/mypage/:action/:id' => array('controller' => 'mypage'),
-      // '/mypage/:action' => array('controller' => 'mypage'),
     );
   }
 

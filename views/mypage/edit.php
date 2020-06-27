@@ -28,6 +28,7 @@
 
 <form method="POST" action="" enctype="multipart/form-data">
   <input type="file" name="icon">
-  <input type="submit" value="送信">
+  <input type="submit" name="icon" value="送信">
+  <input type="hidden" name="_token" value="<?= $this->escape($_token); ?>">
 </form>
 

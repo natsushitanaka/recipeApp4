@@ -12,8 +12,8 @@
 <form action="" method="POST">
 <input type="hidden" name="_token" value="<?= $this->escape($_token); ?>">
 <p>パスワード</p>
-<input type="password" name="now_password" value="<?= $this->escape($now_password); ?>" placeholder="現在のパスワード"><br>
-<input type="password" name="new_password" value="<?= $this->escape($new_password); ?>" placeholder="新しいパスワード"><br>
-<input type="password" name="validate_password" value="<?= $this->escape($validate_password); ?>" placeholder="新しいパスワード(確認)"><br>
+<input type="password" name="now_password" value="<?= $this->escape($password['now']); ?>" placeholder="現在のパスワード"><br>
+<input type="password" name="new_password" value="<?= $this->escape($password['new']); ?>" placeholder="新しいパスワード"><br>
+<input type="password" name="validate_password" value="<?= $this->escape($password['validate']); ?>" placeholder="新しいパスワード(確認)"><br>
 <input type="submit" value="変更する">
 </form>

@@ -9,8 +9,11 @@
 <?php endif; ?>
 
 <form method="POST" action="" enctype="multipart/form-data">
+
 <input type="text" maxlength="40" name="title" value="<?= $this->escape($menu['title']); ?>" placeholder="メニュー名(20字以内)">*必須<br>
+
 <input type="number" name="cost" value="<?= $this->escape($menu['cost']); ?>" placeholder="コスト"><br>
+
 <select name="category"><br>
     <?php foreach($categories as $category): ?>
         <option value="<?= $this->escape($category); ?>" 
@@ -18,17 +21,22 @@
         <?= $this->escape($category); ?></option>
     <?php endforeach; ?>
 </select><br>
+
 <textarea name="body" placeholder="レシピ">
 <?= $this->escape($menu['body']); ?>
 </textarea><br>
+
 <input type="file" name="img"><br>
-<input type="radio" name="openRange" value="1"
-<?php if($menu['openRange'] === '1'){echo 'checked'; } ?>>
+
+<input type="radio" name="is_displayed" value="1"
+<?php if($menu['is_displayed'] === '1'){echo 'checked'; } ?>>
 <label>公開</label>
-<input type="radio" name="openRange" value="0"
-<?php if($menu['openRange'] === '0' || $menu['openRange'] === null){echo 'checked'; } ?>>
+<input type="radio" name="is_displayed" value="0"
+<?php if($menu['is_displayed'] === '0' || $menu['is_displayed'] === null){echo 'checked'; } ?>>
 <label>非公開</label><br>
+
 <input type="submit" name="submit" value="登録する">
-<input type="hidden" name="_token" value="<?= $this->escape($_token); ?>"><br>
+<input type="hidden" name="_token" value="<?= $this->escape($_token); ?>">
+
 </form>
 

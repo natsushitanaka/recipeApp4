@@ -10,7 +10,7 @@
 <?php endif; ?>
 
 <div>
-    <?php if($menu['img'] !== null): ?>
+    <?php if(!empty($menu['img'])): ?>
         <img src="/imgs/<?php echo $menu['img']; ?>" width="200" height="200">
     <?php else: ?>
         <p>No Image</p>
@@ -30,11 +30,11 @@
     <textarea name="body" placeholder="レシピ">
     <?= $this->escape($menu['body']); ?>
     </textarea><br>
-    <input type="radio" name="openRange" value="1"
-    <?php if($menu['openRange'] === '1'){echo 'checked'; } ?>>
+    <input type="radio" name="is_displayed" value="1"
+    <?php if($menu['is_displayed'] === '1'){echo 'checked'; } ?>>
     <label>公開</label>
-    <input type="radio" name="openRange" value="0"
-    <?php if($menu['openRange'] === '0' || $menu['openRange'] === null){echo 'checked'; } ?>>
+    <input type="radio" name="is_displayed" value="0"
+    <?php if($menu['is_displayed'] === '0' || $menu['is_displayed'] === null){echo 'checked'; } ?>>
     <label>非公開</label><br>
     <input type="submit" name="submit" value="変更する">
     <input type="hidden" name="_token" value="<?= $this->escape($_token); ?>">

@@ -3,15 +3,16 @@
 <h3>ログイン</h3>
 
 <?php if(isset($messages) && count($messages) > 0): ?>
-  <?= $this->render('messages', array('messages' => $messages)); ?>
+  <?= $this->render('messages', ['messages' => $messages]); ?>
 <?php endif; ?>
 
 <form action="<?= $base_url; ?>/account/authenticate" method="post">
   <input type="hidden" name="_token" value="<?= $this->escape($_token); ?>">
 
-  <?= $this->render('account/account_form', array(
-    'user_name' => $user_name, 'password' => $password,
-  )); ?>
+  <?= $this->render('account/account_form', [
+    'user_name' => $user_name,
+    'password' => $password,
+  ]); ?>
 
   <input type="submit" value="ログイン">
 </form>

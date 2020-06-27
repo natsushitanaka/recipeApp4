@@ -3,13 +3,188 @@
 class MypageController extends Controller
 
 {
-  // protected $auth_actions = array('review', 'registerMenu', 'myMenuList', 'others');
+  protected $auth_actions = ['edit', 'password', 'favorite'];
 
-  private $categories =array('No Category', '前菜', 'サラダ', 'メイン', 'ご飯・麺', 'おつまみ', 'ドリンク');
-  private $sorts =array('作成日（新しい順）', '作成日（古い順）', '更新日（新しい順）', '更新日（古い順）', 'お気に入り（多い順）', 'お気に入り（少ない順）');
-  private $messages = array();
+  private $categories =['No Category', '前菜', 'サラダ', 'メイン', 'ご飯・麺', 'おつまみ', 'ドリンク'];
+  public $sorts =['作成日（古い順）', '更新日（新しい順）', '更新日（古い順）', 'お気に入り（多い順）', 'お気に入り（少ない順）', '作成日（新しい順）'];
+  private $messages = [];
 
-  public function pageNation($records = array(), $max_record_by_page)
+
+  public function indexAction()
+  {
+    if(!$this->session->isAuthenticated()){
+      return $this->redirect('/recipe');
+    }
+
+    $path = '';
+
+    $menus = [];
+    $categories = [];
+    $user = [];
+
+    
+    $this->InitFindSessions($path);
+
+    if(isset($_POST['find'])){
+        $this->isSafeCsrf($path);
+        $this->getFindSessions($path);
+    }
+
+    $categories = $this->createCategoryCounted();   
+    
+    if($this->session->isAuthenticated()){
+      $user = $_SESSION['user'];
+      $menus = $this->db_manager->get('Menus')->findMine($_SESSION['user']['id'], $_SESSION[$path.'_freeword'], $_SESSION[$path.'_category_selected'], $_SESSION[$path.'_is_displayed']);
+      $menus = $this->createMenusIncludeCountFavorite($menus);
+    }
+
+    $create_sort_array = $this->createSortArray($menus, $_SESSION[$path.'_sort_selected'], 'created_at', 'updated_at', 'favorite');
+
+    array_multisort($create_sort_array['sort_array'], $create_sort_array['option'], $menus);
+
+    $total_menu = count($menus);
+    $page_nation = $this->pageNation($menus, 10);
+
+
+    return $this->render([
+      'menus' => $page_nation['records'],
+      'user' => $user,
+      'page_nation' => $page_nation,
+      'categories' => $categories,
+      'sorts' => $this->sorts,
+      'total_menu' => $total_menu,
+      'path' => $path,
+      '_token' => $this->generateCsrfToken($path),
+    ]);
+  }
+
+
+
+
+  public function editAction()
+  {
+    $path = 'mypage/edit';
+
+    $user = $_SESSION['user'];
+    $user_name = $this->request->getPost('user_name');
+
+    if(isset($user_name)){
+      $this->isSafeCsrf($path);
+
+      if(!strlen($user_name)){
+        $this->messages[] = "ユーザー名を入力してください。";
+      }elseif($user_name === $user['user_name']){
+        $this->messages[] = "現在のユーザー名と同じですよ？";
+      }elseif(!$this->db_manager->get('Users')->isUniqueUserName($user_name)){
+        $this->messages[] = 'このユーザー名は使用できません。';
+      }
+
+      if(count($this->messages) === 0){
+        $this->db_manager->get('Users')->editName($user['id'], $user_name);
+        $user = $this->db_manager->get('Users')->fetchByUserName($user_name);
+        $this->messages[] = 'ユーザー名を変更しました。';
+      }
+    }
+
+    if(isset($_POST['icon'])){
+      $this->isSafeCsrf($path);
+
+      if(empty($_FILES['icon']['name'])){
+        $this->messages[] = '画像ファイル(png,gif,jpg,jpeg)を選択してください。';
+      }else{
+        $icon_data = file_get_contents($_FILES['icon']['tmp_name']);
+        $icon_ext = pathinfo($_FILES["icon"]["name"], PATHINFO_EXTENSION);
+  
+        if($icon_ext !== 'png' && $icon_ext !== 'gif' && $icon_ext !== 'jpg' && $icon_ext !== 'jpeg' ){
+          $this->messages[] = '画像ファイル(png,gif,jpg,jpeg)を選択してください。';
+        }
+  
+        if(count($this->messages) === 0){
+          $this->db_manager->get('Users')->editIcon($user['id'], $icon_data, $icon_ext);
+          $user = $this->db_manager->get('Users')->fetchByUserName($user['user_name']);
+        }
+      }
+    }
+
+    $this->session->set('user', $user);
+
+    return $this->render([
+      'user' => $user,
+      'messages' => $this->messages,
+      '_token' => $this->generateCsrfToken($path),
+    ]);
+  }
+
+  public function passwordAction()
+  {
+    $path = 'mypage/password';
+
+    $now_password = $this->request->getPost('now_password');
+    $new_password = $this->request->getPost('new_password');
+    $validate_password = $this->request->getPost('validate_password');
+    
+    if(isset($now_password) || isset($new_password) || isset($validate_password)){
+      $this->isSafeCsrf($path);
+
+      if(!strlen($now_password)){
+        $this->messages[] = '現在のパスワードを入力してください。';
+      }elseif(!$this->db_manager->get('Users')->validatePassword($now_password, $_SESSION['user']['password'])){
+        $this->messages[] = '現在のパスワードが正しくありません。';
+      }
+      if(!strlen($new_password)){
+        $this->messages[] = '新しいパスワードを入力してください。';
+      }
+      if(!strlen($validate_password)){
+        $this->messages[] = '新しいパスワード(確認)を入力してください。';
+      }
+      if(strlen($new_password) && strlen($validate_password)){
+        if($new_password !== $validate_password){
+          $this->messages[] = '新しいパスワードと新しいパスワード(確認)が一致しません。';
+        }
+        if(!preg_match('/\A(?=.*?[a-z])(?=.*?\d)(?=.*?[!-\/:-@[-`{-~])[!-~]{8,20}+\z/i', $new_password)){
+          $this->messages[] = 'パスワードは半角英数字記号の組み合わせ８～２０文字以内で入力してください。';
+        }
+      }
+
+      if(count($this->messages) === 0){
+        $this->db_manager->get('Users')->editPassword($_SESSION['user']['id'], $new_password);
+        $user = $this->db_manager->get('Users')->fetchByUserName($_SESSION['user']['user_name']);
+        $this->session->set('user', $user);
+        $this->messages[] = 'パスワードを変更しました。';
+      }
+    }
+    
+    return $this->render([
+      'password' => [
+        'now' => $now_password,
+        'new' => $new_password,
+        'validate' => $validate_password,
+      ],
+      'messages' => $this->messages,
+      '_token' => $this->generateCsrfToken($path),
+    ]);
+  }
+
+
+
+  public function favoriteAction()
+  {
+    $path = 'favorites';
+
+    $menus = $this->db_manager->get('Menus')->getFavorites($_SESSION['user']['id']);
+    $menus = $this->createMenusIncludeCountFavorite($menus);
+    $page_nation = $this->pageNation($menus, 10);
+
+    return $this->render([
+      'menus' => $menus,
+      'page_nation' => $page_nation,
+      '_token' => $this->generateCsrfToken($path),
+    ]);
+  }
+
+// -----------------------functions-----------------------
+
+  public function pageNation($records = [], $max_record_by_page)
   {
       $total_rec = count($records); 
       $range = 2;
@@ -26,70 +201,61 @@ class MypageController extends Controller
           $current_page = 1;
       }
 
-      $prevDiff = 0;
+      $prev_diff = 0;
       if ($current_page - $range < 1) {
-        $prevDiff = $range - $current_page + 1;
+        $prev_diff = $range - $current_page + 1;
       }
       
-      $nextDiff = 0;
+      $next_diff = 0;
       if ($current_page + $range > $max_page) {
-        $nextDiff = $current_page + $range - $max_page;
+        $next_diff = $current_page + $range - $max_page;
       }
 
       $start_no = ($current_page - 1) * $max_record_by_page;
 
       $records = array_slice($records, $start_no, $max_record_by_page, true);
 
-      return array(
+      return [
           'max_page' => $max_page,
           'records' => $records,
           'current_page' => $current_page,
           'range' => $range,
-          'prevDiff' => $prevDiff,
-          'nextDiff' => $nextDiff,
-      );
+          'prev_diff' => $prev_diff,
+          'next_diff' => $next_diff,
+      ];
   }
 
-  public function indexAction()
+
+
+  public function checkImg()
   {
-    $user = array();
-    $menus = array();
-    $favorites = array();
-    $categories = array();
-    $sort_array = array();
+      $this->img = null;
+      
+      $tempfile = $_FILES['img']['tmp_name'];
+      $img = uniqid();
+      $img .= '.' . substr(strrchr($_FILES['img']['name'], '.'), 1);
+      $file = "imgs/".$img;
 
-    $freeword = $this->request->getPost('freeword');
-    $category_selected = $this->request->getPost('category');
-    $sort_selected = $this->request->getPost('sort');
-    $openRange = $this->request->getPost('openRange');
+      if (is_uploaded_file($tempfile)) {
+          move_uploaded_file($tempfile , 'imgs/'.$img);
 
-    if($this->session->isAuthenticated()){
-      $user = $this->db_manager->get('Users')->fetchByUserName($_SESSION['user']['user_name']);
-      $getMine = $this->db_manager->get('Menus')->getMine($_SESSION['user']['id']);
-      $favorites = $this->db_manager->get('Menus')->getFavorites($_SESSION['user']['id']);
-    }else{
-      $user = null;
-    }
+          if (!exif_imagetype($file)){
+              return $this->messages[] = "選択したファイルは画像ではありません。";
+          }else{
+              $this->img = $img;
+          }
 
-    if(isset($_POST['find'])){
-      $getMine = $this->db_manager->get('Menus')->findMine($freeword, $category_selected, $openRange);
-    }
+      }else{
+          return $this->messages[] = "画像をアップロード出来ませんでした。";
+      }    
+  }
 
-    foreach($this->categories as $category){
-      $categories += $this->db_manager->get('Menus')->countCategory($category);
-    }
 
-    foreach($getMine as $menu){
-        $countFavorite = $this->db_manager->get('Favorites')->countFavorite($menu['id']);
-        $menu += $countFavorite;
-        $menus[] = $menu;
-    }
-
-    $created_at = array_column($menus, 'created_at');
-    $updated_at = array_column($menus, 'updated_at');
-    $favorite = array_column($menus, 'favorite');
-
-    if(isset($_POST['sort'])){
+  public function createSortArray($menus, $sort_selected, $created_at, $updated_at, $favorite)
+  {
+      $created_at = array_column($menus, $created_at);
+      $updated_at = array_column($menus, $updated_at);
+      $favorite = array_column($menus, $favorite);
 
       switch ($sort_selected) {
           case '作成日（新しい順）':
@@ -118,126 +284,87 @@ class MypageController extends Controller
               break;
       }    
 
-      array_multisort($sort_array, $option, $menus);
-    }
+      return [
+          'sort_array' => $sort_array,
+          'option' => $option,
+      ];
 
-    $total_menu = count($menus);
-
-    $pageNation = $this->pageNation($menus, 10);
-
-    return $this->render(array(
-      'user' => $user,
-      'menus' => $pageNation['records'],
-      'pageNation' => $pageNation,
-      'categories' => $categories,
-      'sorts' => $this->sorts,
-      'freeword' => $freeword,
-      'category_selected' => $category_selected,
-      'sort_selected' => $sort_selected,
-      'favorites' => $favorites,
-      'total_menu' => $total_menu,
-      'openRange' => $openRange,
-      '_token' => $this->generateCsrfToken('mypage/index'),
-    ));
   }
 
-  public function favoriteAction()
+
+  public function isSafeCsrf($path)
   {
-    $favorites = array();
+    $token = $this->request->getPost('_token');
 
-    $favorites = $this->db_manager->get('Menus')->getFavorites($_SESSION['user']['id']);
-
-    return $this->render(array(
-      'favorites' => $favorites,
-      '_token' => $this->generateCsrfToken('mypage/favorite'),
-    ));
+    if(!$this->checkCsrfToken($path, $token)){
+      return $this->redirect('/'.$path);
+    }
   }
 
-  public function editAction()
+
+
+  public function getFindSessions($path)
   {
-    $user = $_SESSION['user'];
-    $user_name = $this->request->getPost('user_name');
-
-    if(isset($user_name)){
-      if(!strlen($user_name)){
-        $this->messages[] = "ユーザー名を入力してください。";
-      }elseif($user_name === $user['user_name']){
-        $this->messages[] = "現在のユーザー名と同じですよ？";
-      }elseif(!$this->db_manager->get('Users')->isUniqueUserName($user_name)){
-        $this->messages[] = 'このユーザー名は使用できません。';
-      }
-
-      if(count($this->messages) === 0){
-        $this->db_manager->get('Users')->editName($user['id'], $user_name);
-        $user = $this->db_manager->get('Users')->fetchByUserName($user_name);
-        $this->messages[] = 'ユーザー名を変更しました。';
-      }
-    }
-
-    if(!empty($_FILES['icon']['name'])){
-      $icon_data = file_get_contents($_FILES['icon']['tmp_name']);
-      $icon_ext = pathinfo($_FILES["icon"]["name"], PATHINFO_EXTENSION);
-
-      if($icon_ext !== 'png' && $icon_ext !== 'gif' && $icon_ext !== 'jpg' && $icon_ext !== 'jpeg' ){
-        $this->messages[] = '画像ファイル(png,gif,jpg,jpeg)を選択してください。';
-      }
-
-      if(count($this->messages) === 0){
-        $this->db_manager->get('Users')->editIcon($user['id'], $icon_data, $icon_ext);
-      }
-    }
-
-    $user = $this->db_manager->get('Users')->fetchByUserName($user['user_name']);
-    $this->session->set('user', $user);
-
-    return $this->render(array(
-      'user' => $user,
-      'messages' => $this->messages,
-      '_token' => $this->generateCsrfToken('mypage/edit'),
-    ));
+      $_SESSION[$path.'_freeword'] = $this->request->getPost('freeword');
+      $_SESSION[$path.'_category_selected'] = $this->request->getPost('category');
+      $_SESSION[$path.'_sort_selected'] = $this->request->getPost('sort');
+      $_SESSION[$path.'_is_displayed'] = $this->request->getPost('is_displayed');
   }
 
-  public function passwordAction()
+
+
+  public function initFindSessions($path)
   {
-    $now = $this->request->getPost('now_password');
-    $new = $this->request->getPost('new_password');
-    $validate = $this->request->getPost('validate_password');
-    
-    if(isset($now) || isset($new) || isset($validate)){
-      if(!strlen($now)){
-        $this->messages[] = '現在のパスワードを入力してください。';
-      }elseif(!$this->db_manager->get('Users')->isSamePassword($_SESSION['user']['password'], $now)){
-        $this->messages[] = '現在のパスワードが正しくありません。';
-      }
-      if(!strlen($new)){
-        $this->messages[] = '新しいパスワードを入力してください。';
-      }
-      if(!strlen($validate)){
-        $this->messages[] = '新しいパスワード(確認)を入力してください。';
-      }
-      if(strlen($new) && strlen($validate)){
-        if($new !== $validate){
-          $this->messages[] = '新しいパスワードと新しいパスワード(確認)が一致しません。';
-        }
-        if(!preg_match('/\A(?=.*?[a-z])(?=.*?\d)(?=.*?[!-\/:-@[-`{-~])[!-~]{8,20}+\z/i', $new)){
-          $this->messages[] = 'パスワードは半角英数字記号の組み合わせ８～２０文字以内で入力してください。';
-        }
+      if(empty($_SESSION[$path.'_freeword'])){
+          $_SESSION[$path.'_freeword'] = '';
+      }    
+      if(empty($_SESSION[$path.'_category_selected'])){
+          $_SESSION[$path.'_category_selected'] = '';
+      }    
+      if(empty($_SESSION[$path.'_sort_selected'])){
+          $_SESSION[$path.'_sort_selected'] = '作成日（新しい順）';
+      }    
+      if(!isset($_SESSION[$path.'_is_displayed'])){
+          $_SESSION[$path.'_is_displayed'] = '1';
+      }        
+  }
+
+
+
+  public function getMenuForm()
+  {
+      return [
+          'title' => $this->request->getPost('title'),
+          'cost' => $this->request->getPost('cost'),
+          'category' => $this->request->getPost('category'),
+          'body' => $this->request->getPost('body'),
+          'is_displayed' => $this->request->getPost('is_displayed'),
+      ];
+  }
+
+
+  public function createCategoryCounted()
+  {
+      $categories = [];
+
+      foreach($this->categories as $category){
+          $categories += $this->db_manager->get('Menus')->countCategory($category);
       }
 
-      if(count($this->messages) === 0){
-        $this->db_manager->get('Users')->editPassword($_SESSION['user']['id'], $new);
-        $user = $this->db_manager->get('Users')->fetchByUserName($_SESSION['user']['user_name']);
-        $this->session->set('user', $user);
-        $this->messages[] = 'パスワードを変更しました。';
-      }
-    }
-    
-    return $this->render(array(
-      'now_password' => $now,
-      'new_password' => $new,
-      'validate_password' => $validate,
-      'messages' => $this->messages,
-      '_token' => $this->generateCsrfToken('mypage/password'),
-    ));
+      return $categories;
   }
+
+
+  public function createMenusIncludeCountFavorite($menus)
+  {
+      $MenusIncludeCountFavorite = [];
+      foreach($menus as $menu){
+          $count_favorite = $this->db_manager->get('Favorites')->countFavorite($menu['id']);
+          $menu += $count_favorite;
+          $MenusIncludeCountFavorite[] = $menu;
+      }
+
+      return $MenusIncludeCountFavorite;
+  }
+
 }

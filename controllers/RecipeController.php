@@ -2,12 +2,211 @@
 
 class RecipeController extends Controller
 {
-    private $categories =array('No Category', '前菜', 'サラダ', 'メイン', 'ご飯・麺', 'おつまみ', 'ドリンク');
-    private $sorts =array('作成日（新しい順）', '作成日（古い順）', '更新日（新しい順）', '更新日（古い順）', 'お気に入り（多い順）', 'お気に入り（少ない順）');
-    private $messages = array();
+    protected $auth_actions = ['new', 'delete', 'edit'];
+
+    private $categories =['No Category', '前菜', 'サラダ', 'メイン', 'ご飯・麺', 'おつまみ', 'ドリンク'];
+    public $sorts =['作成日（古い順）', '更新日（新しい順）', '更新日（古い順）', 'お気に入り（多い順）', 'お気に入り（少ない順）', '作成日（新しい順）'];
+    private $messages = [];
     private $img;
 
-    public function pageNation($records = array(), $max_record_by_page)
+
+    public function newAction()
+    {
+        $path = 'recipe/new';
+
+        $menu = $this->getMenuForm();
+
+        if(isset($_POST['submit'])){
+            $this->isSafeCsrf($path);
+            
+            if(!strlen($menu['title'])){
+                $this->messages[] = "タイトルは必須項目です。";
+            }
+            if(!empty($_FILES['img']['name'])){
+                $this->checkImg();
+            }
+
+            if(count($this->messages) === 0){
+                $this->db_manager->get('Menus')->insert
+                ($_SESSION['user']['id'], $menu['title'], (int)$menu['cost'], $menu['category'], $menu['body'], $menu['is_displayed'], $this->img);
+                $this->messages[] = "新メニューが「{$menu['title']}」登録されました。";
+            }    
+        }
+
+        return $this->render([
+            'menu' => $menu,
+            'categories' => $this->categories,
+            'messages' => $this->messages,
+            '_token' => $this->generateCsrfToken($path),
+        ]);      
+    }
+
+
+
+    public function detailAction($params)
+    {
+        $path = 'recipe/detail/'.$params['id'];
+
+        $menu = $this->db_manager->get('Menus')->getDetail($params['id']);
+        $count_favorite = $this->db_manager->get('Favorites')->countFavorite($menu['id']);
+        $comments = $this->db_manager->get('Comments')->get($menu['id']);
+        
+        if($this->session->isAuthenticated()){
+            $favorite = $this->db_manager->get('Favorites')->isFavorite($_SESSION['user']['id'], $params['id']);
+        }else{
+            $favorite = '';
+        }
+
+        return $this->render([
+            'menu' => $menu,
+            'count_favorite' => $count_favorite['favorite'],
+            'comments' => $comments,
+            'favorite' => $favorite,
+            '_token' => $this->generateCsrfToken($path),
+        ]);      
+    }
+
+
+
+    public function deleteAction($params)
+    {
+        if(!$this->request->isPost()){
+            $this->forward404();
+        }
+
+        $this->isSafeCsrf('/');
+
+        $this->db_manager->get('Menus')->delete($params['id']);
+
+        return $this->redirect($_SERVER['HTTP_REFERER']);
+    }
+
+
+
+
+    public function editAction($params)
+    {
+        $path = 'recipe/edit'.$params['id'];
+
+        $menu = $this->getMenuForm();
+
+        if(isset($_POST['submit'])){
+            $this->isSafeCsrf($path);
+
+            if(!strlen($menu['title'])){
+                $this->messages[] = "タイトルは必須項目です。";
+            }
+
+            if(count($this->messages) === 0){
+                $this->db_manager->get('Menus')->edit
+                ($params['id'], $menu['title'], $menu['cost'], $menu['category'], $menu['body'], $menu['is_displayed']);
+                $this->messages[] = "レシピを変更しました。";
+            }    
+        }
+
+        if(isset($_POST['img'])){
+            $this->isSafeCsrf($path);
+
+            if(empty($_FILES['img']['name'])){
+                $this->messages[] = "ファイルを選択してください";
+            }else{
+                $this->checkImg();
+            }
+
+            if(count($this->messages) === 0){
+                $this->db_manager->get('Menus')->editImg($params['id'], $this->img);
+            }
+        }
+
+        $menu = $this->db_manager->get('Menus')->getDetail($params['id']);
+
+        return $this->render([
+            'menu' => $menu,
+            'categories' => $this->categories,
+            'messages' => $this->messages,
+            '_token' => $this->generateCsrfToken($path),
+        ]);      
+    }
+
+
+
+    public function othersAction($params)
+    {
+        $path = 'recipe/user/'.$params['id'];
+
+        $this->InitFindSessions($path);
+
+        if(isset($_POST['find'])){
+            $this->isSafeCsrf($path);
+            $this->getFindSessions($path);
+        }
+
+        $user = $this->db_manager->get('Users')->fetchByUserId($params['id']); 
+
+        $categories = $this->createCategoryCounted();    
+        $menus = $this->db_manager->get('Menus')->findMine($user['id'], $_SESSION[$path.'_freeword'], $_SESSION[$path.'_category_selected'], 1);
+        $menus = $this->createMenusIncludeCountFavorite($menus);
+
+        $create_sort_array = $this->createSortArray($menus, $_SESSION[$path.'_sort_selected'], 'created_at', 'updated_at', 'favorite');
+
+        array_multisort($create_sort_array['sort_array'], $create_sort_array['option'], $menus);
+
+        $total_menu = count($menus);
+        $page_nation = $this->pageNation($menus, 10);
+    
+        return $this->render([
+            'user' => $user,
+            'menus' => $page_nation['records'],
+            'page_nation' => $page_nation,
+            'total_menu' => $total_menu,
+            'categories' => $categories,
+            'sorts' => $this->sorts,
+            'path' => $path,
+            '_token' => $this->generateCsrfToken($path),
+        ]);      
+    }
+
+
+
+
+    public function recipesAction()
+    {
+        $path = 'recipe';
+
+        $this->InitFindSessions($path);
+
+        if(isset($_POST['find'])){
+            $this->isSafeCsrf($path);
+            $this->getFindSessions($path);
+        }
+
+        $categories = $this->createCategoryCounted();    
+        $menus = $this->db_manager->get('Menus')->find($_SESSION[$path.'_freeword'], $_SESSION[$path.'_category_selected']);
+        $menus = $this->createMenusIncludeCountFavorite($menus);
+
+        $create_sort_array = $this->createSortArray($menus, $_SESSION[$path.'_sort_selected'], 'created_at', 'updated_at', 'favorite');
+        array_multisort($create_sort_array['sort_array'], $create_sort_array['option'], $menus);
+
+        $total_menu = count($menus);
+        $page_nation = $this->pageNation($menus, 10);
+
+        return $this->render([
+            'total_menu' => $total_menu,
+            'categories' => $categories,
+            'sorts' => $this->sorts,
+            'menus' => $page_nation['records'],
+            'page_nation' => $page_nation,
+            'path' => $path,
+            '_token' => $this->generateCsrfToken($path),
+        ]);      
+    }
+
+
+
+    // -----------------------functions-----------------------
+
+
+    public function pageNation($records = [], $max_record_by_page)
     {
         $total_rec = count($records); 
         $range = 2;
@@ -24,28 +223,28 @@ class RecipeController extends Controller
             $current_page = 1;
         }
   
-        $prevDiff = 0;
+        $prev_diff = 0;
         if ($current_page - $range < 1) {
-          $prevDiff = $range - $current_page + 1;
+          $prev_diff = $range - $current_page + 1;
         }
         
-        $nextDiff = 0;
+        $next_diff = 0;
         if ($current_page + $range > $max_page) {
-          $nextDiff = $current_page + $range - $max_page;
+          $next_diff = $current_page + $range - $max_page;
         }
   
         $start_no = ($current_page - 1) * $max_record_by_page;
   
         $records = array_slice($records, $start_no, $max_record_by_page, true);
   
-        return array(
+        return [
             'max_page' => $max_page,
             'records' => $records,
             'current_page' => $current_page,
             'range' => $range,
-            'prevDiff' => $prevDiff,
-            'nextDiff' => $nextDiff,
-          );
+            'prev_diff' => $prev_diff,
+            'next_diff' => $next_diff,
+        ];
     }
 
 
@@ -74,241 +273,120 @@ class RecipeController extends Controller
     }
 
 
-
-    public function newAction()
+    public function createSortArray($menus, $sort_selected, $created_at, $updated_at, $favorite)
     {
-        $img = null;
+        $created_at = array_column($menus, $created_at);
+        $updated_at = array_column($menus, $updated_at);
+        $favorite = array_column($menus, $favorite);
 
-        $menu = array(
+        switch ($sort_selected) {
+            case '作成日（新しい順）':
+                $sort_array = $created_at;
+                $option = SORT_DESC;
+                break;
+            case '作成日（古い順）':
+                $sort_array = $created_at;
+                $option = SORT_ASC;
+                break;
+            case '更新日（新しい順）':
+                $sort_array = $updated_at;
+                $option = SORT_DESC;
+                break;
+            case '更新日（古い順）':
+                $sort_array = $updated_at;
+                $option = SORT_ASC;
+                break;
+            case 'お気に入り（多い順）':
+                $sort_array = $favorite;
+                $option = SORT_DESC;
+                break;
+            case 'お気に入り（少ない順）':
+                $sort_array = $favorite;
+                $option = SORT_ASC;
+                break;
+        }    
+
+        return [
+            'sort_array' => $sort_array,
+            'option' => $option,
+        ];
+
+    }
+
+
+    public function isSafeCsrf($path)
+    {
+      $token = $this->request->getPost('_token');
+  
+      if(!$this->checkCsrfToken($path, $token)){
+        return $this->redirect('/'.$path);
+      }
+    }
+
+
+
+    public function getFindSessions($path)
+    {
+        $_SESSION[$path.'_freeword'] = $this->request->getPost('freeword');
+        $_SESSION[$path.'_category_selected'] = $this->request->getPost('category');
+        $_SESSION[$path.'_sort_selected'] = $this->request->getPost('sort');
+        $_SESSION[$path.'_is_displayed'] = $this->request->getPost('is_displayed');
+    }
+
+
+
+    public function initFindSessions($path)
+    {
+        if(empty($_SESSION[$path.'_freeword'])){
+            $_SESSION[$path.'_freeword'] = '';
+        }    
+        if(empty($_SESSION[$path.'_category_selected'])){
+            $_SESSION[$path.'_category_selected'] = '';
+        }    
+        if(empty($_SESSION[$path.'_sort_selected'])){
+            $_SESSION[$path.'_sort_selected'] = '作成日（新しい順）';
+        }    
+        if(!isset($_SESSION[$path.'_is_displayed'])){
+            $_SESSION[$path.'_is_displayed'] = '1';
+        }        
+    }
+
+
+    
+    public function getMenuForm()
+    {
+        return [
             'title' => $this->request->getPost('title'),
             'cost' => $this->request->getPost('cost'),
             'category' => $this->request->getPost('category'),
             'body' => $this->request->getPost('body'),
-            'openRange' => $this->request->getPost('openRange'),
-        );
-
-        if(isset($_POST['submit'])){
-            if(!strlen($menu['title'])){
-                $this->messages[] = "タイトルは必須項目です。";
-            }
-            if(!empty($_FILES['img']['name'])){
-                $this->checkImg();
-            }
-
-            if($_POST['cost'] === ''){
-                $menu['cost'] = '0';
-            }
-
-            if(count($this->messages) === 0){
-                $this->db_manager->get('Menus')->insert
-                ($_SESSION['user']['id'], $menu['title'], $menu['cost'], $menu['category'], $menu['body'], $menu['openRange'], $this->img);
-                $this->messages[] = "新メニューが「{$menu['title']}」登録されました。";
-            }    
-        }
-
-        return $this->render(array(
-            'menu' => $menu,
-            'categories' => $this->categories,
-            'messages' => $this->messages,
-            '_token' => $this->generateCsrfToken('recipe/new'),
-          ));      
+            'is_displayed' => $this->request->getPost('is_displayed'),
+        ];
     }
 
 
-
-    public function detailAction($params)
+    public function createCategoryCounted()
     {
-        $menu = $this->db_manager->get('Menus')->getDetail($params['id']);
-        $countFavorite = $this->db_manager->get('Favorites')->countFavorite($menu['id']);
-        $comments = $this->db_manager->get('Comments')->get($menu['id']);
-        $comment = $this->request->getPost('comment');
-
-        $favorite = $this->db_manager->get('Favorites')->isFavorite($_SESSION['user']['id'], $params['id']);
-
-        return $this->render(array(
-            'menu' => $menu,
-            'countFavorite' => $countFavorite['favorite'],
-            'comments' => $comments,
-            'favorite' => $favorite,
-            '_token' => $this->generateCsrfToken('recipe/detail'),
-          ));      
-    }
-
-
-
-    public function deleteAction($params)
-    {
-        $this->db_manager->get('Menus')->delete($params['id']);
-
-        return $this->redirect($_SERVER['HTTP_REFERER']);
-    }
-
-
-
-
-    public function editAction($params)
-    {
-        $menu = $this->db_manager->get('Menus')->getDetail($params['id']);
-
-        if(isset($_POST['submit'])){
-            $menu = array(
-                'title' => $this->request->getPost('title'),
-                'cost' => $this->request->getPost('cost'),
-                'category' => $this->request->getPost('category'),
-                'body' => $this->request->getPost('body'),
-                'openRange' => $this->request->getPost('openRange'),
-            );    
-
-            if($_POST['cost'] === ''){
-                $menu['cost'] = '0';
-            }
-
-            if(!strlen($menu['title'])){
-                $this->messages[] = "タイトルは必須項目です。";
-            }
-
-            if(count($this->messages) === 0){
-                $this->db_manager->get('Menus')->edit
-                ($params['id'], $menu['title'], $menu['cost'], $menu['category'], $menu['body'], $menu['openRange']);
-                $this->messages[] = "レシピを変更しました。";
-            }    
-        }
-
-        if(isset($_POST['img'])){
-            if(empty($_FILES['img']['name'])){
-                $this->messages[] = "ファイルを選択してください";
-            }else{
-                $this->checkImg();
-            }
-
-            if(count($this->messages) === 0){
-                $this->db_manager->get('Menus')->editImg($params['id'], $this->img);
-            }
-        }
-
-
-        return $this->render(array(
-            'menu' => $menu,
-            'categories' => $this->categories,
-            'messages' => $this->messages,
-            '_token' => $this->generateCsrfToken('recipe/edit'),
-          ));      
-    }
-
-
-
-    public function othersAction()
-    {
-        if(!isset($_GET['user'])){
-            return $this->redirect($_SERVER['HTTP_REFERER']);
-        }else{
-            $user = $this->db_manager->get('Users')->fetchById($_GET['user']);
-            $getMine = $this->db_manager->get('Menus')->getMine($_GET['user']);
-        }
-
-        foreach($getMine as $menu){
-            $countFavorite = $this->db_manager->get('Favorites')->countFavorite($menu['id']);
-            $menu += $countFavorite;
-            $menus[] = $menu;
-        }
-
-        $total_menu = count($menus);
-
-        $pageNation = $this->pageNation($menus, 10);
-    
-        return $this->render(array(
-            'user' => $user,
-            'menus' => $menus,
-            'menus' => $pageNation['records'],
-            'max_page' => $pageNation['max_page'],
-            'total_menu' => $total_menu,
-            '_token' => $this->generateCsrfToken('recipe/others'),
-          ));      
-    }
-
-
-
-    public function recipesAction()
-    {
-        $categories = array();
-        $menus = array();
-        $sort_array = array();
-        $sort_selected = '作成日（新しい順）';
-        $category_selected = '指定なし';
-
-        $getAll = $this->db_manager->get('Menus')->getAll();
-
-        $freeword = $this->request->getPost('freeword');
-
-        if(isset($_POST['find'])){
-            $category_selected = $this->request->getPost('category');
-            $sort_selected = $this->request->getPost('sort');
-        
-            $getAll = $this->db_manager->get('Menus')->find($freeword, $category_selected);
-        }
+        $categories = [];
 
         foreach($this->categories as $category){
             $categories += $this->db_manager->get('Menus')->countCategory($category);
         }
 
-        foreach($getAll as $menu){
-            $countFavorite = $this->db_manager->get('Favorites')->countFavorite($menu['id']);
-            $menu += $countFavorite;
-            $menus[] = $menu;
-        }
-
-        $created_at = array_column($menus, 'created_at');
-        $updated_at = array_column($menus, 'updated_at');
-        $favorite = array_column($menus, 'favorite');
-
-        if(isset($_POST['sort'])){
-
-            switch ($sort_selected) {
-                case '作成日（新しい順）':
-                    $sort_array = $created_at;
-                    $option = SORT_DESC;
-                    break;
-                case '作成日（古い順）':
-                    $sort_array = $created_at;
-                    $option = SORT_ASC;
-                    break;
-                case '更新日（新しい順）':
-                    $sort_array = $updated_at;
-                    $option = SORT_DESC;
-                    break;
-                case '更新日（古い順）':
-                    $sort_array = $updated_at;
-                    $option = SORT_ASC;
-                    break;
-                case 'お気に入り（多い順）':
-                    $sort_array = $favorite;
-                    $option = SORT_DESC;
-                    break;
-                case 'お気に入り（少ない順）':
-                    $sort_array = $favorite;
-                    $option = SORT_ASC;
-                    break;
-            }    
-      
-            array_multisort($sort_array, $option, $menus);
-        }
-
-        $total_menu = count($menus);
-
-        $pageNation = $this->pageNation($menus, 10);
-
-        return $this->render(array(
-            'categories' => $categories,
-            'sorts' => $this->sorts,
-            'freeword' => $freeword,
-            'category_selected' => $category_selected,
-            'sort_selected' => $sort_selected,
-            'total_menu' => $total_menu,
-            'menus' => $pageNation['records'],
-            'pageNation' => $pageNation,
-                  '_token' => $this->generateCsrfToken('recipe/recipes'),
-          ));      
+        return $categories;
     }
 
 
+    public function createMenusIncludeCountFavorite($menus)
+    {
+        $MenusIncludeCountFavorite = [];
+        foreach($menus as $menu){
+            $count_favorite = $this->db_manager->get('Favorites')->countFavorite($menu['id']);
+            $menu += $count_favorite;
+            $MenusIncludeCountFavorite[] = $menu;
+        }
+
+        return $MenusIncludeCountFavorite;
+    }
+  
 }

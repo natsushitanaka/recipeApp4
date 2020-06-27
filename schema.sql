@@ -1,47 +1,40 @@
--- create database recipeApp DEFAULT CHARACTER SET utf8mb4;
+grant all on owazo_recipeapp.* to owazo_dbuser@mysql10009.xserver.jp;
 
--- use recipeApp;
+-- CREATE TABLE users (
+--   id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+--   user_name VARCHAR(255) UNIQUE NOT NULL,
+--   password VARCHAR(255) NOT NULL,
+--   icon_data BLOB,
+--   icon_ext VARCHAR(10),
+--   created_at DATETIME NOT NULL,
+--   updated_at DATETIME NOT NULL,
+--   deleted_at DATETIME DEFAULT NULL
+-- )DEFAULT CHARSET=utf8mb4;
 
--- drop table users;
--- drop table menus;
--- drop table comments;
--- drop table favorites;
+-- CREATE TABLE favorites (
+--   id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+--   user_id INT NOT NULL,
+--   menu_id INT NOT NULL,
+--   created_at DATETIME NOT NULL
+-- )DEFAULT CHARSET=utf8mb4;
 
-create table users (
-  id int auto_increment primary key not null,
-  user_name varchar(255) not null,
-  password varchar(255) not null,
-  icon_data blob,
-  icon_ext varchar(10),
-  created_at datetime not null,
-  updated_at datetime not null,
-  deleted_at datetime DEFAULT null
-)DEFAULT CHARSET=utf8mb4;
+-- CREATE TABLE menus (
+--   id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+--   user_id INT NOT NULL,
+--   title VARCHAR(255) NOT NULL,
+--   category VARCHAR(255),
+--   body VARCHAR(255),
+--   cost INT,
+--   img VARCHAR(255),
+--   created_at DATETIME NOT NULL,
+--   updated_at DATETIME NOT NULL,
+--   is_displayed TINYINT(1) DEFAULT false
+-- )DEFAULT CHARSET=utf8mb4;
 
-create table favorites (
-  id int auto_increment primary key not null,
-  user_id int not null,
-  menu_id int not null,
-  created_at datetime not null
-)DEFAULT CHARSET=utf8mb4;
-
-create table menus (
-  id int auto_increment primary key not null,
-  user_id int not null,
-  title varchar(255) not null,
-  category varchar(255),
-  body varchar(255),
-  cost int not null,
-  img varchar(255),
-  created_at datetime not null,
-  updated_at datetime not null,
-  openRange tinyint(1) default false
-)DEFAULT CHARSET=utf8mb4;
-
-create table comments (
-  id int auto_increment primary key not null,
-  menu_id int not null,
-  user_id int not null,
-  body varchar(255) not null,
-  created_at datetime not null
-)DEFAULT CHARSET=utf8mb4;
+-- CREATE TABLE comments (
+--   id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+--   menu_id INT NOT NULL,
+--   user_id INT NOT NULL,
+--   body VARCHAR(255) NOT NULL,
+--   created_at DATETIME NOT NULL
+-- )DEFAULT CHARSET=utf8mb4;

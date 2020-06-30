@@ -11,24 +11,24 @@
 
 <p>
 【フリーワード：
-  <?php if(strlen($_SESSION[$path.'_freeword'])): ?>
-    <?= $this->escape($_SESSION[$path.'_freeword']); ?>
+  <?php if(strlen($_GET['freeword'])): ?>
+    <?= $this->escape($_GET['freeword']); ?>
   <?php else: ?>
     指定なし
   <?php endif; ?>
   】
 【カテゴリ：
-  <?php if(strlen($_SESSION[$path.'_category_selected'])): ?>
-    <?= $this->escape($_SESSION[$path.'_category_selected']); ?>
+  <?php if(strlen($_GET['category'])): ?>
+    <?= $this->escape($_GET['category']); ?>
   <?php else: ?>
     指定なし
   <?php endif; ?>
   】
-【並び順：<?= $this->escape($_SESSION[$path.'_sort_selected']); ?>】
+【並び順：<?= $this->escape($_GET['sort']); ?>】
 【件数：<?= $this->escape($total_menu); ?>】
 </p>
 
-<?= $this->render('findMenuForm', [
+<?= $this->render('searchForm', [
   'menus' => $menus, 
   'categories' => $categories,
   'sorts' => $sorts,
@@ -38,4 +38,4 @@
   ]); ?>
 
 <?= $this->render('menuTable', ['menus' => $menus, 'is_mypage' => '']); ?>
-<?= $this->render('pageNation', ['page_nation' => $page_nation]); ?>
+<?= $this->render('pageNation', ['page_nation' => $page_nation, 'path' => $path]); ?>

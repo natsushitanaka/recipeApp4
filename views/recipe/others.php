@@ -5,7 +5,7 @@
 
 <h3><?= $this->escape($user['user_name']); ?>さんのメニューリスト【<?= $this->escape($total_menu); ?>件】</h3>
 
-<?= $this->render('findMenuForm', [
+<?= $this->render('searchForm', [
   'menus' => $menus, 
   'categories' => $categories,
   'sorts' => $sorts,
@@ -15,5 +15,5 @@
   ]); ?>
 
 <?= $this->render('menuTable', ['menus' => $menus, 'is_mypage' => '']); ?>
-<?= $this->render('pageNation', ['page_nation' => $page_nation]); ?>
+<?= $this->render('pageNation', ['page_nation' => $page_nation, 'path' => $path]); ?>
 

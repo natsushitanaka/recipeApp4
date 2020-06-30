@@ -3,6 +3,9 @@
 <a href="<?= $base_url; ?>/">ホーム</a>
 <a href="<?= $this->escape($_SERVER['HTTP_REFERER']); ?>">戻る</a>
 
+<?php if($menu['user_id'] !== $_SESSION['user']['id'] && $menu['is_displayed'] === '0'): ?>
+    <p>非公開メニューです。</p>
+<?php else: ?>
 <h3>
     メニュー詳細
     <?php if($session->isAuthenticated() && $menu['user_id'] === $_SESSION['user']['id']): ?>
@@ -117,3 +120,4 @@
     <input type="submit" value="コメントする">
     <input type="hidden" name="_token" value="<?= $this->escape($_token); ?>">
 </form>
+<?php endif; ?>

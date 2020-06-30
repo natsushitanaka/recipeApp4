@@ -8,5 +8,5 @@
     <p>＊お気に入りの登録がありません</p>
 <?php else: ?>
     <?= $this->render('menuTable', ['menus' => $menus, '_token' => $_token, 'is_mypage' => '']); ?>
-    <?= $this->render('pageNation', ['page_nation' => $page_nation]); ?>
+    <?= $this->render('pageNation', ['page_nation' => $page_nation, 'path' => $path]); ?>
 <?php endif; ?>

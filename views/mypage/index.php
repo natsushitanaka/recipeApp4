@@ -36,12 +36,9 @@
 <?php endif; ?>
 
 <?php if($session->isAuthenticated()): ?>
-  <?php if($total_menu === 0): ?>
-    <h3>マイメニューリスト【<?= $this->escape($total_menu); ?>件】</h3>
-    <p>＊メニューの登録がありません</p>
-  <?php else: ?>
+  <h3>マイメニューリスト【<?= $this->escape($total_menu); ?>件】</h3>
 
-    <?= $this->render('findMenuForm', [
+  <?= $this->render('searchForm', [
       'menus' => $menus, 
       'categories' => $categories,
       'sorts' => $sorts,
@@ -50,8 +47,11 @@
       'is_mypage' => 'yes',
       ]); ?>
 
+  <?php if($total_menu === 0): ?>
+    <p>＊該当するメニューがありません</p>
+  <?php else: ?>
     <?= $this->render('menuTable', ['menus' => $menus, 'is_mypage' => 'yes']); ?>
-    <?= $this->render('pageNation', ['page_nation' => $page_nation]); ?>
+    <?= $this->render('pageNation', ['page_nation' => $page_nation, 'path' => $path]); ?>
   <?php endif; ?>
 <?php endif; ?>
 

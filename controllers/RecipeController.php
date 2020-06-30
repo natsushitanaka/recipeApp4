@@ -17,7 +17,7 @@ class RecipeController extends Controller
         $menu = $this->getMenuForm();
 
         if(isset($_POST['submit'])){
-            $this->isSafeCsrf($path);
+            $this->isSafeCsrf($path, $_POST['_token']);
             
             if(!strlen($menu['title'])){
                 $this->messages[] = "タイトルは必須項目です。";
@@ -48,6 +48,11 @@ class RecipeController extends Controller
         $path = 'recipe/detail/'.$params['id'];
 
         $menu = $this->db_manager->get('Menus')->getDetail($params['id']);
+
+        if(empty($menu)){
+            $this->forward404();
+        }
+
         $count_favorite = $this->db_manager->get('Favorites')->countFavorite($menu['id']);
         $comments = $this->db_manager->get('Comments')->get($menu['id']);
         
@@ -74,7 +79,7 @@ class RecipeController extends Controller
             $this->forward404();
         }
 
-        $this->isSafeCsrf('/');
+        $this->isSafeCsrf('/', $_POST['_token']);
 
         $this->db_manager->get('Menus')->delete($params['id']);
 
@@ -91,7 +96,7 @@ class RecipeController extends Controller
         $menu = $this->getMenuForm();
 
         if(isset($_POST['submit'])){
-            $this->isSafeCsrf($path);
+            $this->isSafeCsrf($path, $_POST['_token']);
 
             if(!strlen($menu['title'])){
                 $this->messages[] = "タイトルは必須項目です。";
@@ -105,7 +110,7 @@ class RecipeController extends Controller
         }
 
         if(isset($_POST['img'])){
-            $this->isSafeCsrf($path);
+            $this->isSafeCsrf($path, $_POST['_token']);
 
             if(empty($_FILES['img']['name'])){
                 $this->messages[] = "ファイルを選択してください";
@@ -134,25 +139,24 @@ class RecipeController extends Controller
     {
         $path = 'recipe/user/'.$params['id'];
 
-        $this->InitFindSessions($path);
+        $this->initSearchForm();
 
-        if(isset($_POST['find'])){
-            $this->isSafeCsrf($path);
-            $this->getFindSessions($path);
+        if(isset($_GET['search'])){
+            $this->isSafeCsrf($path, $_GET['_token']);
         }
 
         $user = $this->db_manager->get('Users')->fetchByUserId($params['id']); 
 
         $categories = $this->createCategoryCounted();    
-        $menus = $this->db_manager->get('Menus')->findMine($user['id'], $_SESSION[$path.'_freeword'], $_SESSION[$path.'_category_selected'], 1);
+        $menus = $this->db_manager->get('Menus')->findMine($user['id'], $_GET['freeword'], $_GET['category'], 1);
         $menus = $this->createMenusIncludeCountFavorite($menus);
 
-        $create_sort_array = $this->createSortArray($menus, $_SESSION[$path.'_sort_selected'], 'created_at', 'updated_at', 'favorite');
+        $create_sort_array = $this->createSortArray($menus, $_GET['sort'], 'created_at', 'updated_at', 'favorite');
 
         array_multisort($create_sort_array['sort_array'], $create_sort_array['option'], $menus);
 
         $total_menu = count($menus);
-        $page_nation = $this->pageNation($menus, 10);
+        $page_nation = $this->pageNation($menus);
     
         return $this->render([
             'user' => $user,
@@ -173,22 +177,21 @@ class RecipeController extends Controller
     {
         $path = 'recipe';
 
-        $this->InitFindSessions($path);
+        $this->initSearchForm();
 
-        if(isset($_POST['find'])){
-            $this->isSafeCsrf($path);
-            $this->getFindSessions($path);
+        if(isset($_GET['_token'])){
+            $this->isSafeCsrf($path, $_GET['_token']);
         }
 
         $categories = $this->createCategoryCounted();    
-        $menus = $this->db_manager->get('Menus')->find($_SESSION[$path.'_freeword'], $_SESSION[$path.'_category_selected']);
+        $menus = $this->db_manager->get('Menus')->find($_GET['freeword'], $_GET['category']);
         $menus = $this->createMenusIncludeCountFavorite($menus);
 
-        $create_sort_array = $this->createSortArray($menus, $_SESSION[$path.'_sort_selected'], 'created_at', 'updated_at', 'favorite');
+        $create_sort_array = $this->createSortArray($menus, $_GET['sort'], 'created_at', 'updated_at', 'favorite');
         array_multisort($create_sort_array['sort_array'], $create_sort_array['option'], $menus);
 
         $total_menu = count($menus);
-        $page_nation = $this->pageNation($menus, 10);
+        $page_nation = $this->pageNation($menus);
 
         return $this->render([
             'total_menu' => $total_menu,
@@ -206,9 +209,10 @@ class RecipeController extends Controller
     // -----------------------functions-----------------------
 
 
-    public function pageNation($records = [], $max_record_by_page)
+    public function pageNation($records = [])
     {
         $total_rec = count($records); 
+        $max_record_by_page = 10;
         $range = 2;
   
         if($max_record_by_page > $total_rec){
@@ -314,10 +318,8 @@ class RecipeController extends Controller
     }
 
 
-    public function isSafeCsrf($path)
-    {
-      $token = $this->request->getPost('_token');
-  
+    public function isSafeCsrf($path, $token)
+    {  
       if(!$this->checkCsrfToken($path, $token)){
         return $this->redirect('/'.$path);
       }
@@ -327,27 +329,27 @@ class RecipeController extends Controller
 
     public function getFindSessions($path)
     {
-        $_SESSION[$path.'_freeword'] = $this->request->getPost('freeword');
-        $_SESSION[$path.'_category_selected'] = $this->request->getPost('category');
-        $_SESSION[$path.'_sort_selected'] = $this->request->getPost('sort');
-        $_SESSION[$path.'_is_displayed'] = $this->request->getPost('is_displayed');
+        $freeword = $this->request->getPost('freeword');
+        $category_selected = $this->request->getPost('category');
+        $sort_selected = $this->request->getPost('sort');
+        $is_displayed = $this->request->getPost('is_displayed');
     }
 
 
 
-    public function initFindSessions($path)
+    public function initSearchForm()
     {
-        if(empty($_SESSION[$path.'_freeword'])){
-            $_SESSION[$path.'_freeword'] = '';
+        if(!isset($_GET['freeword'])){
+            $_GET['freeword'] = '';
         }    
-        if(empty($_SESSION[$path.'_category_selected'])){
-            $_SESSION[$path.'_category_selected'] = '';
+        if(!isset($_GET['category'])){
+            $_GET['category'] = '';
         }    
-        if(empty($_SESSION[$path.'_sort_selected'])){
-            $_SESSION[$path.'_sort_selected'] = '作成日（新しい順）';
+        if(!isset($_GET['sort'])){
+            $_GET['sort'] = '作成日（新しい順）';
         }    
-        if(!isset($_SESSION[$path.'_is_displayed'])){
-            $_SESSION[$path.'_is_displayed'] = '1';
+        if(!isset($_GET['is_displayed'])){
+            $_GET['is_displayed'] = '1';
         }        
     }
 

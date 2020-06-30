@@ -18,27 +18,21 @@ class MypageController extends Controller
 
     $path = '';
 
-    $menus = [];
-    $categories = [];
-    $user = [];
+    $this->initSearchForm();
 
-    
-    $this->InitFindSessions($path);
-
-    if(isset($_POST['find'])){
-        $this->isSafeCsrf($path);
-        $this->getFindSessions($path);
-    }
+    if(isset($_GET['_token'])){
+      $this->isSafeCsrf($path, $_GET['_token']);
+  }
 
     $categories = $this->createCategoryCounted();   
     
     if($this->session->isAuthenticated()){
       $user = $_SESSION['user'];
-      $menus = $this->db_manager->get('Menus')->findMine($_SESSION['user']['id'], $_SESSION[$path.'_freeword'], $_SESSION[$path.'_category_selected'], $_SESSION[$path.'_is_displayed']);
+      $menus = $this->db_manager->get('Menus')->findMine($_SESSION['user']['id'], $_GET['freeword'], $_GET['category'], $_GET['is_displayed']);
       $menus = $this->createMenusIncludeCountFavorite($menus);
     }
 
-    $create_sort_array = $this->createSortArray($menus, $_SESSION[$path.'_sort_selected'], 'created_at', 'updated_at', 'favorite');
+    $create_sort_array = $this->createSortArray($menus, $_GET['sort'], 'created_at', 'updated_at', 'favorite');
 
     array_multisort($create_sort_array['sort_array'], $create_sort_array['option'], $menus);
 
@@ -178,6 +172,7 @@ class MypageController extends Controller
     return $this->render([
       'menus' => $menus,
       'page_nation' => $page_nation,
+      'path' => $path,
       '_token' => $this->generateCsrfToken($path),
     ]);
   }
@@ -292,10 +287,8 @@ class MypageController extends Controller
   }
 
 
-  public function isSafeCsrf($path)
-  {
-    $token = $this->request->getPost('_token');
-
+  public function isSafeCsrf($path, $token)
+  {  
     if(!$this->checkCsrfToken($path, $token)){
       return $this->redirect('/'.$path);
     }
@@ -303,44 +296,23 @@ class MypageController extends Controller
 
 
 
-  public function getFindSessions($path)
+  public function initSearchForm()
   {
-      $_SESSION[$path.'_freeword'] = $this->request->getPost('freeword');
-      $_SESSION[$path.'_category_selected'] = $this->request->getPost('category');
-      $_SESSION[$path.'_sort_selected'] = $this->request->getPost('sort');
-      $_SESSION[$path.'_is_displayed'] = $this->request->getPost('is_displayed');
-  }
-
-
-
-  public function initFindSessions($path)
-  {
-      if(empty($_SESSION[$path.'_freeword'])){
-          $_SESSION[$path.'_freeword'] = '';
+      if(!isset($_GET['freeword'])){
+          $_GET['freeword'] = '';
       }    
-      if(empty($_SESSION[$path.'_category_selected'])){
-          $_SESSION[$path.'_category_selected'] = '';
+      if(!isset($_GET['category'])){
+          $_GET['category'] = '';
       }    
-      if(empty($_SESSION[$path.'_sort_selected'])){
-          $_SESSION[$path.'_sort_selected'] = '作成日（新しい順）';
+      if(!isset($_GET['sort'])){
+          $_GET['sort'] = '作成日（新しい順）';
       }    
-      if(!isset($_SESSION[$path.'_is_displayed'])){
-          $_SESSION[$path.'_is_displayed'] = '1';
+      if(!isset($_GET['is_displayed'])){
+          $_GET['is_displayed'] = '1';
       }        
   }
 
 
-
-  public function getMenuForm()
-  {
-      return [
-          'title' => $this->request->getPost('title'),
-          'cost' => $this->request->getPost('cost'),
-          'category' => $this->request->getPost('category'),
-          'body' => $this->request->getPost('body'),
-          'is_displayed' => $this->request->getPost('is_displayed'),
-      ];
-  }
 
 
   public function createCategoryCounted()

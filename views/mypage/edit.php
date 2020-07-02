@@ -10,10 +10,10 @@
 <?php endif; ?>
 
 <form action="" method="POST">
-<p>ユーザー名</p>
-<input type="text" name="user_name" value="<?= $this->escape($user['user_name']); ?>">
-<input type="submit" value="変更する">
-<input type="hidden" name="_token" value="<?= $this->escape($_token); ?>">
+  <p>ユーザー名</p>
+  <input type="text" name="user_name" value="<?= $this->escape($user['user_name']); ?>">
+  <input type="submit" value="変更する">
+  <input type="hidden" name="_token" value="<?= $this->escape($_token); ?>">
 </form>
 
 <p>アイコン</p>

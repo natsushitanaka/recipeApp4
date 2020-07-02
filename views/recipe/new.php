@@ -10,7 +10,7 @@
 
 <form method="POST" action="" enctype="multipart/form-data">
 
-<input type="text" maxlength="40" name="title" value="<?= $this->escape($menu['title']); ?>" placeholder="メニュー名(20字以内)">*必須<br>
+<input class="text" type="text" maxlength="40" name="title" value="<?= $this->escape($menu['title']); ?>" placeholder="メニュー名(20字以内)">*必須<br>
 
 <input type="number" name="cost" value="<?= $this->escape($menu['cost']); ?>" placeholder="コスト"><br>
 
@@ -22,7 +22,7 @@
     <?php endforeach; ?>
 </select><br>
 
-<textarea name="body" placeholder="レシピ">
+<textarea class="recipe_body" name="body" placeholder="レシピ">
 <?= $this->escape($menu['body']); ?>
 </textarea><br>
 

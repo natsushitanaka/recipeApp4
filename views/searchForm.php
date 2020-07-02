@@ -1,7 +1,7 @@
 <form action="<?= $base_url; ?>/<?= $path; ?>" method="GET">
-    <input type="text" name="freeword" value="<?= $this->escape($_GET['freeword']); ?>" placeholder="フリーワード検索">
+    <input class="text search" type="text" name="freeword" value="<?= $this->escape($_GET['freeword']); ?>" placeholder="フリーワード検索">
 
-    <select name="category">
+    <select class="search" name="category">
         <option value="">--Category--</option>
         <?php foreach($categories as $category => $count): ?>
             <option value="<?= $this->escape($category); ?>" 
@@ -12,13 +12,13 @@
     </select>
     
     <?php if($is_mypage === 'yes'): ?>
-    <select name="is_displayed">
+    <select class="search" name="is_displayed">
       <option value="1" <?php if($_GET['is_displayed'] === '1'){echo 'selected';} ?>>公開</option>
       <option value="0" <?php if($_GET['is_displayed'] === '0'){echo 'selected';} ?>>非公開</option>
     </select>
     <?php endif; ?>
 
-    <select name="sort">
+    <select class="search" name="sort">
       <?php foreach($sorts as $sort): ?>
           <option value="<?= $this->escape($sort); ?>" 
           <?php if($this->escape($sort) === $this->escape($_GET['sort'])){echo "selected";} ?>>
@@ -27,6 +27,6 @@
         <?php endforeach; ?>
     </select>
 
-    <input type="submit" value="検索">
+    <input class="search submit" type="submit" value="検索">
     <input type="hidden" name="_token" value="<?= $this->escape($_token); ?>">
 </form>

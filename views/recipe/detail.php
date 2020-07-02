@@ -14,7 +14,7 @@
 
 </h3>
 
-<table>
+<table class="table_detail">
     <div>
         <?php if($menu['img'] !== null): ?>
             <img src="/imgs/<?php echo $menu['img']; ?>" width="200" height="200">
@@ -79,6 +79,12 @@
         <?php endif; ?> 
     </tr>
     <?php endif; ?> 
+    <tr>
+        <td class="text_center" colspan="2">レシピ</td>
+    </tr>
+    <tr>
+        <td class="body" colspan="2"><?= $this->escape($menu['body']); ?></td>
+    </tr>
 </table>
 
 <h3>コメント一覧</h3>
@@ -86,7 +92,7 @@
 <?php if(count($comments) === 0): ?>
     <p>＊コメントはありません</p>
 <?php else: ?>
-    <table>
+    <table class="table">
         <tr>
             <td>ユーザー</td>
             <td>本文</td>
@@ -116,8 +122,8 @@
 <?php endif; ?>
 
 <form action="<?= $base_url; ?>/comment/new/<?= $this->escape($menu['id']); ?>" method="POST">
-    <textarea name="comment" placeholder="コメント入力欄"></textarea><br>
-    <input type="submit" value="コメントする">
+    <input class="comment_body" type="text" name="comment" maxlength="40" placeholder="コメント入力欄（２０字以内）">
+    <input class="submit" type="submit" value="コメントする">
     <input type="hidden" name="_token" value="<?= $this->escape($_token); ?>">
 </form>
 <?php endif; ?>

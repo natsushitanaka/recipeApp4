@@ -132,7 +132,7 @@ class MenusRepository extends DbRepository
 
   public function findMine($user_id, $freeword, $category, $is_displayed)
     {
-      if(strlen($category)){
+      if(!empty($category)){
         
         $sql = "
         select menus.id, menus.title, menus.body, menus.cost, menus.user_id, menus.created_at, menus.updated_at, menus.category, menus.is_displayed, users.user_name

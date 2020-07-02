@@ -63,7 +63,7 @@ class MypageController extends Controller
     $user_name = $this->request->getPost('user_name');
 
     if(isset($user_name)){
-      $this->isSafeCsrf($path);
+      $this->isSafeCsrf($path, $_POST['_token']);
 
       if(!strlen($user_name)){
         $this->messages[] = "ユーザー名を入力してください。";
@@ -81,7 +81,7 @@ class MypageController extends Controller
     }
 
     if(isset($_POST['icon'])){
-      $this->isSafeCsrf($path);
+      $this->isSafeCsrf($path, $_POST['_token']);
 
       if(empty($_FILES['icon']['name'])){
         $this->messages[] = '画像ファイル(png,gif,jpg,jpeg)を選択してください。';

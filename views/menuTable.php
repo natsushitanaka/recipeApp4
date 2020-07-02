@@ -1,5 +1,5 @@
 <?php if(isset($menus) && count($menus) > 0): ?>
-    <table>
+    <table class="table">
       <tr>
         <th>メニュー名</th>
         <?php if($is_mypage !== 'yes'): ?>

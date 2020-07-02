@@ -1,0 +1,54 @@
+.table{
+    text-align: center;
+    border-spacing: 10px 5px;
+    margin: 20px 0;
+}
+
+.table_detail{
+    border-spacing: 10px 5px;
+    margin: 20px 0;
+}
+
+input, select, textarea{
+    height: 25px;
+    margin-top: 5px;
+}
+
+.text, .password{
+    height: 25px;
+    width: 200px;
+}
+
+select, .submit{
+    height: 30px;
+}
+
+.delete{
+    height: 20px;
+    width: 20px;
+}
+
+.search{
+    margin-left: 10px;
+}
+
+.recipe_body{
+    text-align: center;
+    white-space: pre-wrap;
+    height: 300px;
+    width: 200px;
+}
+
+.comment_body{
+    width: 300px;
+}
+
+.body{
+    text-align: left;
+    padding-left: 10px;
+    white-space: pre-wrap;
+}
+.text_center{
+    text-align: center;
+}
+

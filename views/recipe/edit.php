@@ -27,7 +27,7 @@
             <?= $this->escape($category); ?></option>
         <?php endforeach; ?>
     </select><br>
-    <textarea name="body" placeholder="レシピ">
+    <textarea class="recipe_body" name="body" placeholder="レシピ">
     <?= $this->escape($menu['body']); ?>
     </textarea><br>
     <input type="radio" name="is_displayed" value="1"
